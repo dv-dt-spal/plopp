@@ -6,10 +6,14 @@ import mapboxgl from 'mapbox-gl';
 import Map, {Marker} from 'react-map-gl';
 import { getOpenAIResponse } from '../helpers/openai';
 import axios from 'axios'; // <-- Import axios
+// import "./FuturisticChat.module.css"; // Import your CSS file
 
 
 const REACT_APP_MAP_BOX_TOKEN = process.env.REACT_APP_MAP_BOX_TOKEN;
 const REACT_APP_OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
+
+
+
 
 const Container = styled.div`
   display: flex;
@@ -93,6 +97,52 @@ const MapContainer = styled.div`
 //   };
 
 
+// function parseCoordinatesFromResponse(response) {
+//   console.log()
+//   const regex = /(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/g;
+//   const coordinates = [];
+
+//   let match;
+//   while ((match = regex.exec(response)) !== null) {
+//     coordinates.push({
+//       latitude: parseFloat(match[1]),
+//       longitude: parseFloat(match[3]),
+//     });
+
+//     console.log(latitude)
+
+//   }
+
+//   return coordinates;
+// }
+
+
+function parseCoordinatesFromResponse(response) {
+  const regex = /(-?\d+(\.\d+)?)[° ]+([NS]),?\s*(-?\d+(\.\d+)?)[° ]+([EW])/g;
+  const coordinates = [];
+
+  let match;
+  while ((match = regex.exec(response)) !== null) {
+    const latitude = parseFloat(match[1]);
+    const longitude = parseFloat(match[4]);
+    const direction1 = match[3];
+    const direction2 = match[6];
+    if (direction1 === 'S' || direction2 === 'W') {
+      coordinates.push({
+        latitude: -latitude,
+        longitude: -longitude,
+      });
+    } else {
+      coordinates.push({
+        latitude: latitude,
+        longitude: longitude,
+      });
+    }
+  }
+
+  return coordinates;
+}
+
 async function sendMessageToGPT3(message) {
   const requestOptions = {
     method: "POST",
@@ -153,6 +203,18 @@ const handleSendMessage = async () => {
 
   try {
     const assistantResponse = await sendMessageToGPT3(inputValue);
+
+    const coordinates = parseCoordinatesFromResponse(assistantResponse);
+    coordinates.forEach((coord) => {
+  // Draw marker on map at `coord.latitude` and `coord.longitude`
+      console.log(coord.latitude)
+      console.log(coord.longitude)
+      // setMarkers(coord)
+    });
+    if (coordinates.length > 0) {
+      setMarkers(coordinates);
+    }
+
     setMessages((prevMessages) => [
       ...prevMessages,
       { text: assistantResponse, sender: 'Plopp' },
@@ -168,6 +230,8 @@ const handleSendMessage = async () => {
     }
   };
 
+  const [markers, setMarkers] = useState([]);
+  
 
   return (
     <>
@@ -200,19 +264,25 @@ const handleSendMessage = async () => {
           </InputContainer>
         </ChatContainer>
         <Map
-        initialViewState={{
-          latitude: 37.8,
-          longitude: -122.4,
-          zoom: 14
-        }}
-        width="100%"
-        height="100%"
-        // style={{width: 800, height: 600}}
-        mapStyle="mapbox://styles/ozyphus/clfrjwcxi002b01llomz55wav"
-        mapboxAccessToken={REACT_APP_MAP_BOX_TOKEN}
-      >
-        <Marker longitude={-122.4} latitude={37.8} color="red" />
-      </Map>
+          initialViewState={{
+            latitude: 37.8,
+            longitude: -122.4,
+            zoom: 14
+          }}
+          width="100%"
+          height="100%"
+          mapStyle="mapbox://styles/ozyphus/clfrjwcxi002b01llomz55wav"
+          mapboxAccessToken={REACT_APP_MAP_BOX_TOKEN}>
+          {markers.map((marker, index) => (
+            <Marker
+              key={index}
+              longitude={marker.longitude}
+              latitude={marker.latitude}
+              color="red"
+              size={50}
+            />
+          ))}
+</Map>
       </Container>
     </>
   );
