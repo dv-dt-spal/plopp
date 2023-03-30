@@ -17,5 +17,6 @@ module.exports = {
   reactStrictMode: true,
   env: {
     REACT_APP_MAP_BOX_TOKEN: process.env.REACT_APP_MAP_BOX_TOKEN,
+    REACT_APP_OPENAI_API_KEY: process.env.REACT_APP_OPENAI_API_KEY,
   }
 }
