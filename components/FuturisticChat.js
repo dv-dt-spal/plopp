@@ -21,6 +21,26 @@ const Container = styled.div`
   height: 100vh;
 `;
 
+const InputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 10px;
+
+`;
+
+const Input = styled.input`
+  flex: 1;
+  flex-direction: reverse;
+
+  border: none;
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+  border-radius: 20px;
+  outline: none;
+
+`;
+
 const ChatContainer = styled.div`
   flex: 1;
   display: flex;
@@ -32,24 +52,11 @@ const ChatContainer = styled.div`
 const MessageList = styled.div`
   flex: 1;
   overflow-y: auto;
-  color: #fff;
+  color: #111;
+  background-color: #f56;
+
 `;
 
-const InputContainer = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 10px;
-`;
-
-const Input = styled.input`
-  flex: 1;
-  border: none;
-  background-color: #333;
-  color: #fff;
-  padding: 10px;
-  border-radius: 20px;
-  outline: none;
-`;
 
 const MapContainer = styled.div`
   flex: 1;
@@ -231,7 +238,7 @@ const handleSendMessage = async () => {
   };
 
   const [markers, setMarkers] = useState([]);
-  
+
 
   return (
     <>
