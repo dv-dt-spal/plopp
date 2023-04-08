@@ -62,70 +62,29 @@ const MapContainer = styled.div`
   flex: 1;
 `;
 
-// const FuturisticChat = () => {
-//   const [messages, setMessages] = useState([]);
-//   const [inputValue, setInputValue] = useState('');
-//   const [viewport, setViewport] = useState({
-//     latitude: 37.7749,
-//     longitude: -122.4194,
-//     zoom: 10,
+
+// const setMarkersAndViewport = (newMarkers) => {
+//   setMarkers(newMarkers);
+//   const bounds = new mapboxgl.LngLatBounds();
+//   newMarkers.forEach((marker) => {
+//     bounds.extend([marker.longitude, marker.latitude]);
 //   });
-
-//   const handleSendMessage = () => {
-//     setMessages([...messages, inputValue]);
-//     setInputValue('');
-//   };
-
-//   const handleKeyPress = (event) => {
-//     if (event.key === 'Enter') {
-//       handleSendMessage();
-//     }
-//   };
-
-// working 2
-// const FuturisticChat = () => {
-//   const [messages, setMessages] = useState([]);
-//   const [inputValue, setInputValue] = useState('');
-//   const [viewport, setViewport] = useState({
-//     latitude: 37.7749,
-//     longitude: -122.4194,
+//   const newViewport = {
+//     ...viewport,
+//     latitude: bounds.getCenter().lat,
+//     longitude: bounds.getCenter().lng,
 //     zoom: 10,
-//   });
-
-//   const handleSendMessage = async () => {
-//     setMessages([...messages, { text: inputValue, sender: 'user' }]);
-//     setInputValue('');
-
-//     const aiResponse = await getOpenAIResponse(inputValue);
-//     setMessages((prevMessages) => [
-//       ...prevMessages,
-//       { text: aiResponse, sender: 'ai' },
-//     ]);
 //   };
+//   setViewport(newViewport);
+// };
 
 
-// function parseCoordinatesFromResponse(response) {
-//   console.log()
-//   const regex = /(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/g;
-//   const coordinates = [];
 
-//   let match;
-//   while ((match = regex.exec(response)) !== null) {
-//     coordinates.push({
-//       latitude: parseFloat(match[1]),
-//       longitude: parseFloat(match[3]),
-//     });
-
-//     console.log(latitude)
-
-//   }
-
-//   return coordinates;
-// }
 
 
 function parseCoordinatesFromResponse(response) {
   const regex = /(-?\d+(\.\d+)?)[° ]+([NS]),?\s*(-?\d+(\.\d+)?)[° ]+([EW])/g;
+  const regex2 = /(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)/g;
   const coordinates = [];
 
   let match;
@@ -134,7 +93,17 @@ function parseCoordinatesFromResponse(response) {
     const longitude = parseFloat(match[4]);
     const direction1 = match[3];
     const direction2 = match[6];
-    if (direction1 === 'S' || direction2 === 'W') {
+    if (direction1 === 'S') {
+      coordinates.push({
+        latitude: -latitude,
+        longitude: longitude,
+      });
+    } else if (direction2 === 'W') {
+      coordinates.push({
+        latitude: latitude,
+        longitude: -longitude,
+      });
+    } else if (direction1 === 'S' && direction2 === 'W') {
       coordinates.push({
         latitude: -latitude,
         longitude: -longitude,
@@ -147,8 +116,20 @@ function parseCoordinatesFromResponse(response) {
     }
   }
 
+  let match2;
+  while ((match2 = regex2.exec(response)) !== null) {
+    const latitude = parseFloat(match2[1]);
+    const longitude = parseFloat(match2[3]);
+    coordinates.push({
+      latitude: latitude,
+      longitude: longitude,
+    });
+  }
+
   return coordinates;
 }
+
+
 
 async function sendMessageToGPT3(message) {
   const requestOptions = {
@@ -201,6 +182,21 @@ const FuturisticChat = () => {
     zoom: 10,
   });
 
+  function setMarkersAndViewport(newMarkers) {
+  // setMarkers(newMarkers);
+  const bounds = new mapboxgl.LngLatBounds();
+  newMarkers.forEach((marker) => {
+    bounds.extend([marker.longitude, marker.latitude]);
+  });
+  const newViewport = {
+    ...viewport,
+    latitude: bounds.getCenter().lat,
+    longitude: bounds.getCenter().lng,
+    zoom: 5,
+  };
+  setViewport(newViewport);
+};
+
 const handleSendMessage = async () => {
   setMessages((prevMessages) => [
     ...prevMessages,
@@ -219,7 +215,8 @@ const handleSendMessage = async () => {
       // setMarkers(coord)
     });
     if (coordinates.length > 0) {
-      setMarkers(coordinates);
+      // setMarkers(coordinates);
+      setMarkersAndViewport(coordinates);
     }
 
     setMessages((prevMessages) => [
@@ -274,19 +271,21 @@ const handleSendMessage = async () => {
           initialViewState={{
             latitude: 37.8,
             longitude: -122.4,
-            zoom: 14
+            zoom: 8
           }}
           width="100%"
           height="100%"
           mapStyle="mapbox://styles/ozyphus/clfrjwcxi002b01llomz55wav"
-          mapboxAccessToken={REACT_APP_MAP_BOX_TOKEN}>
+          mapboxAccessToken={REACT_APP_MAP_BOX_TOKEN}
+          {...viewport} // Pass viewport state variable
+          >
           {markers.map((marker, index) => (
             <Marker
               key={index}
               longitude={marker.longitude}
               latitude={marker.latitude}
               color="red"
-              size={50}
+              size={500}
             />
           ))}
 </Map>
